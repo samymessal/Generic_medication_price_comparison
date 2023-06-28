@@ -6,35 +6,27 @@
 #    By: smessal <smessal@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/06/27 22:07:17 by smessal           #+#    #+#              #
-#    Updated: 2023/06/27 23:40:49 by smessal          ###   ########.fr        #
+#    Updated: 2023/06/29 00:58:48 by smessal          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 import pandas as pd
+import utils
 
-# URL or file path of the Excel file
-zen_path = "../price_lab_priv/zen_price.xlsx"
-teva_path = "../price_lab_priv/teva_price.xlsx"
-# Read the Excel file into a DataFrame
-df_zen = pd.read_excel(zen_path)
-df_teva = pd.read_excel(teva_path)
-# Display the DataFrame
-# print(df_zen.info())
+all_labs = utils.download_data()
+longest_df = all_labs['MYL']["Libellé article"]
+raw_lib = []
+for i in longest_df:
+	raw_lib.append(i.replace("MYL", "XLAB").replace("MYP", "XLAB").replace("VIA", "XLAB").replace("PFI", "XLAB"))
 
-raw_libele = []
-for i in df_zen["Libellé article"]:
-	raw_libele.append(i.replace("ZEN", "torep"))
+df_res = pd.DataFrame(columns=["Medicament", "TEV", "ARR", "BIO", "CRI", "EG", "MYL", "SAN", "ZEN"])
+df_res["Medicament"] = raw_lib
 
-# print(df_zen.iloc[300])
+for i in df_res.columns[1:]:
+	df_res[i] = utils.get_taux(all_labs[i], raw_lib, i)
+	
+max_columns = df_res.iloc[:, 1:].idxmax(axis=1)
 
-print("Result ZEN VS TEVA\n")
+# Create a new column with the column name of the maximum value
+df_res["Best Lab"] = max_columns
 
-j = 0
-for i in raw_libele:
-	keep = df_teva.loc[df_teva["Libellé article"] == i.replace("torep", "TEV"), 'TAUX %'].any()
-	if (keep and int(df_zen["TAUX %"][j].replace(",", "").replace("%", "")) < int(df_teva.loc[df_teva["Libellé article"] == i.replace("torep", "TEV"), 'TAUX %'].values[0].replace(",", "").replace("%", ""))):
-		found = df_teva.loc[df_teva["Libellé article"] == i.replace("torep", "TEV")]
-		print(df_zen.loc[j, 'Libellé article'], df_zen.loc[j, 'TAUX %'])
-		print(found.values[0][2], found.values[0][3])
-		print("\n")
-	j = j + 1
